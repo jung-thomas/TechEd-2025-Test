@@ -1,1 +1,117 @@
-Test
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+	<title>TechEd 2025 – Group Template Links</title>
+	<link rel="icon" href="data:,">
+	<!-- OpenUI5 Bootstrap (standalone, CDN) -->
+	<script id="sap-ui-bootstrap"
+					src="https://sdk.openui5.org/resources/sap-ui-core.js"
+					data-sap-ui-theme="sap_horizon"
+					data-sap-ui-libs="sap.m"
+					data-sap-ui-async="true"
+					data-sap-ui-compatVersion="edge"
+					data-sap-ui-oninit="module:app/init"
+					data-sap-ui-xx-waitForTheme="true">
+	</script>
+	<style>
+		html, body, #content { height:100%; margin:0; }
+		.techedIntroText { max-width: 42rem; }
+	</style>
+	<script>
+	// Fallback if module init (app/init) not executed (older browsers without ES modules)
+	if (!window['app/init']) {
+		sap.ui.getCore().attachInit(function() { window.createApp && window.createApp(); });
+	}
+	</script>
+	<script>
+	sap.ui.define('app/init', [
+		'sap/m/Shell','sap/m/App','sap/m/Page','sap/m/Select','sap/ui/core/Item','sap/m/VBox','sap/m/Link','sap/m/Label','sap/m/Toolbar','sap/m/ToolbarSpacer','sap/m/Title','sap/m/Text'
+	], function(Shell, App, Page, Select, Item, VBox, Link, Label, Toolbar, ToolbarSpacer, Title, Text) {
+		createApp();
+	});
+
+	function createApp() {
+		const baseUrl = 'https://github.com/jung-thomas/TechEd-2025-Test/blob/main/templates/';
+
+		const select = new sap.m.Select({
+			width: '180px',
+			autoAdjustWidth: true,
+			ariaLabelledBy: 'groupSelectLabel',
+			change: function(oEvt){
+				const key = oEvt.getParameter('selectedItem').getKey();
+				updateLinks(key);
+			}
+		});
+		select.addItem(new Item({key:'', text:'Select Group...'}));
+		['01','02','03','04','05'].forEach(g => select.addItem(new Item({key:g, text:'Group '+g})));
+
+		const linksBox = new sap.m.VBox({
+			visible: false,
+			items: []
+		});
+
+		const exampleFiles = ['example1.txt','example2.txt','example3.txt'];
+		const linkControls = exampleFiles.map(f => new sap.m.Link({
+				text: f + ' (opens on GitHub)',
+				target: '_blank',
+				href: 'javascript:void(0);'
+		}));
+		linkControls.forEach(l => linksBox.addItem(l));
+
+		function updateLinks(group) {
+			const visible = !!group;
+			linksBox.setVisible(visible);
+			if (!visible) return;
+			const groupPath = 'TechEd-Group-' + group + '/';
+			linkControls.forEach((link, idx) => {
+				const file = exampleFiles[idx];
+				const href = baseUrl + groupPath + file;
+				link.setHref(href);
+			});
+		}
+
+		const intro = new sap.m.Text({
+			text: 'Choose your TechEd group number to access the three example template files directly on GitHub.'
+		}).addStyleClass('techedIntroText');
+
+		const formBox = new sap.m.VBox({
+			width: '100%',
+			items: [
+				new sap.m.Label('groupSelectLabel', { text: 'Group Number', labelFor: select }),
+				select,
+				linksBox
+			],
+			renderType: 'Div',
+			fitContainer: false
+		}).addStyleClass('sapUiSmallMarginTop');
+
+		const page = new sap.m.Page({
+			title: 'TechEd 2025 – Template Links',
+			content: [intro, formBox],
+			footer: new sap.m.Toolbar({
+				content: [
+					new sap.m.Title({text:'TechEd 2025'}),
+						new sap.m.ToolbarSpacer(),
+						new sap.m.Text({text:'Static Standalone UI5 Page'})
+				]
+			})
+		});
+
+		const app = new sap.m.App({initialPage: page.getId()});
+		app.addPage(page);
+
+		new sap.m.Shell({
+			app: app,
+			title: 'TechEd 2025',
+			showLogout: false
+		}).placeAt('content');
+	}
+	</script>
+</head>
+<body class="sapUiBody" id="content" role="application">
+	<noscript>Please enable JavaScript to use this application.</noscript>
+</body>
+</html>
