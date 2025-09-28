@@ -8,32 +8,62 @@
 	<link rel="icon" href="data:,">
 	<!-- OpenUI5 Bootstrap (standalone, CDN) -->
 	<script id="sap-ui-bootstrap"
-					src="https://sdk.openui5.org/resources/sap-ui-core.js"
-					data-sap-ui-theme="sap_horizon"
-					data-sap-ui-libs="sap.m"
-					data-sap-ui-async="true"
-					data-sap-ui-compatVersion="edge"
-					data-sap-ui-oninit="module:app/init"
-					data-sap-ui-xx-waitForTheme="true">
+				src="https://sdk.openui5.org/resources/sap-ui-core.js"
+				data-sap-ui-theme="sap_horizon"
+				data-sap-ui-libs="sap.m"
+				data-sap-ui-async="true"
+				data-sap-ui-compatVersion="edge"
+				data-sap-ui-xx-waitForTheme="true">
 	</script>
 	<style>
 		html, body, #content { height:100%; margin:0; }
 		.techedIntroText { max-width: 42rem; }
 	</style>
 	<script>
-	// Fallback if module init (app/init) not executed (older browsers without ES modules)
-	if (!window['app/init']) {
-		sap.ui.getCore().attachInit(function() { window.createApp && window.createApp(); });
-	}
-	</script>
-	<script>
-	sap.ui.define('app/init', [
-		'sap/m/Shell','sap/m/App','sap/m/Page','sap/m/Select','sap/ui/core/Item','sap/m/VBox','sap/m/Link','sap/m/Label','sap/m/Toolbar','sap/m/ToolbarSpacer','sap/m/Title','sap/m/Text'
-	], function(Shell, App, Page, Select, Item, VBox, Link, Label, Toolbar, ToolbarSpacer, Title, Text) {
-		createApp();
-	});
+	// Wait for UI5 core to be ready, then build the UI (no external module file needed)
+	sap.ui.getCore().attachInit(function createApp() {
+		const Shell = sap.m.Shell, App = sap.m.App, Page = sap.m.Page, Select = sap.m.Select,
+			Item = sap.ui.core.Item, VBox = sap.m.VBox, Link = sap.m.Link, Label = sap.m.Label,
+			Toolbar = sap.m.Toolbar, ToolbarSpacer = sap.m.ToolbarSpacer, Title = sap.m.Title, Text = sap.m.Text,
+			SegmentedButton = sap.m.SegmentedButton, SegmentedButtonItem = sap.m.SegmentedButtonItem;
 
-	function createApp() {
+		// Theme handling (light/dark) with OS preference default & persistence
+		const THEME_LIGHT = 'sap_horizon';
+		const THEME_DARK = 'sap_horizon_dark';
+		function getStoredTheme() { return localStorage.getItem('ui5ThemePref'); }
+		function detectPreferredTheme() {
+			const stored = getStoredTheme();
+			if (stored === THEME_LIGHT || stored === THEME_DARK) return stored;
+			if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return THEME_DARK;
+			return THEME_LIGHT;
+		}
+		const initialTheme = detectPreferredTheme();
+		if (sap.ui.getCore().getConfiguration().getTheme() !== initialTheme) {
+			sap.ui.getCore().applyTheme(initialTheme);
+		}
+		const themeToggle = new SegmentedButton({
+			selectedKey: initialTheme,
+			items: [
+				new SegmentedButtonItem({key: THEME_LIGHT, text: 'Light'}),
+				new SegmentedButtonItem({key: THEME_DARK, text: 'Dark'})
+			],
+			selectionChange: function(e){
+				const key = e.getParameter('item').getKey();
+				sap.ui.getCore().applyTheme(key);
+				localStorage.setItem('ui5ThemePref', key);
+			}
+		});
+		// React to OS scheme changes only if user hasn't chosen explicitly
+		if (!getStoredTheme() && window.matchMedia) {
+			const mq = window.matchMedia('(prefers-color-scheme: dark)');
+			const listener = function(ev){
+				const newTheme = ev.matches ? THEME_DARK : THEME_LIGHT;
+				sap.ui.getCore().applyTheme(newTheme);
+				themeToggle.setSelectedKey(newTheme);
+			};
+			if (mq.addEventListener) mq.addEventListener('change', listener); else if (mq.addListener) mq.addListener(listener);
+		}
+
 		const baseUrl = 'https://github.com/jung-thomas/TechEd-2025-Test/blob/main/templates/';
 
 		const select = new sap.m.Select({
@@ -90,12 +120,20 @@
 
 		const page = new sap.m.Page({
 			title: 'TechEd 2025 – Template Links',
+			subHeader: new Toolbar({
+				content: [
+					new Title({text:'TechEd 2025'}),
+					new ToolbarSpacer(),
+					new Text({text:'Theme:'}),
+					themeToggle
+				]
+			}),
 			content: [intro, formBox],
 			footer: new sap.m.Toolbar({
 				content: [
 					new sap.m.Title({text:'TechEd 2025'}),
 						new sap.m.ToolbarSpacer(),
-						new sap.m.Text({text:'Static Standalone UI5 Page'})
+						new sap.m.Text({text:'Example Exercise Workshop Template Links'})
 				]
 			})
 		});
@@ -103,12 +141,12 @@
 		const app = new sap.m.App({initialPage: page.getId()});
 		app.addPage(page);
 
-		new sap.m.Shell({
+		new Shell({
 			app: app,
 			title: 'TechEd 2025',
 			showLogout: false
 		}).placeAt('content');
-	}
+	});
 	</script>
 </head>
 <body class="sapUiBody" id="content" role="application">
